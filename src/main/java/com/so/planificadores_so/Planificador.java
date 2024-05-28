@@ -160,7 +160,7 @@ public class Planificador extends Stage {
 
 
         mnArchivo = new Menu("Archivo");
-        mnArchivo.getItems().addAll(mitArchivo,mitCarpeta);
+        mnArchivo.getItems().addAll(mitArchivo, mitCarpeta);
 
         mnOpciones = new Menu("Opciones");
         mnOpciones.getItems().add(mitSalir);
@@ -904,9 +904,32 @@ public class Planificador extends Stage {
             }
             writer.write("\nTiempo total: " + currentTime);
             System.out.println("Archivo exportado correctamente: " + archivo.getAbsolutePath());
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+            alert.setTitle("Archivo exportado");
+            alert.setHeaderText("El archivo se ha exportado correctamente.");
+            ButtonType aceptar = new ButtonType("Aceptar");
+            ButtonType verArchivo = new ButtonType("Ver archivo");
+            alert.getButtonTypes().setAll(aceptar, verArchivo);
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.get() == verArchivo) {
+                openDirectoryAndFile(archivo);
+            }
         } catch (IOException e) {
             e.printStackTrace();
             System.err.println("Error al exportar el archivo: " + e.getMessage());
+        }
+    }
+
+    private void openDirectoryAndFile(File file) {
+        String folderPath = file.getParent();
+        String filePath = file.getAbsolutePath();
+
+        // Ejecutar el comando para abrir la carpeta con el archivo seleccionado
+        String[] commands = {"explorer.exe", "/select,", filePath};
+        try {
+            Runtime.getRuntime().exec(commands, null, new File(folderPath));
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }
