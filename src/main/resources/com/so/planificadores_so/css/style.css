@@ -1,0 +1,23 @@
+.root {
+    -fx-background-color: linear-gradient(to right, #DEDEDE, #FFFFFF);
+}
+
+.text-field {
+    -fx-background-color: #FFFFFF;
+    -fx-border-radius: 5px;
+    -fx-padding: 5px;
+    -fx-border-width: 1px;
+    -fx-border-color: #CCCCCC;
+    -fx-text-fill: #000000;
+}
+
+.cbxOrden {
+    -fx-background-color: #FFFFFF;
+    /*-fx-background-color: linear-gradient(to right, #FFFFFF, #DDDDDD);*/
+    -fx-font-size: 14px;
+    -fx-border-radius: 5px;
+    -fx-padding: 5px;
+    /*-fx-border-width: 1px;*/
+    /*-fx-border-color: #CCCCCC;*/
+    -fx-text-fill: #000000;
+}
