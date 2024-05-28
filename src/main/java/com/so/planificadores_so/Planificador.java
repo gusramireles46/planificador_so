@@ -902,10 +902,11 @@ public class Planificador extends Stage {
                 writer.write(proceso.toString());
                 writer.newLine(); // Nueva línea para separar los procesos
             }
+            writer.write("\nTiempo total: " + currentTime);
             System.out.println("Archivo exportado correctamente: " + archivo.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
-            System.err.println("Error al exportar el archivo FAT: " + e.getMessage());
+            System.err.println("Error al exportar el archivo: " + e.getMessage());
         }
     }
 }
