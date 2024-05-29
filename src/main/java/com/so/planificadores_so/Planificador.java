@@ -94,7 +94,7 @@ public class Planificador extends Stage {
         createButtons();
 
         cbxOrden = new ComboBox<>();
-        cbxOrden.getItems().addAll("First In First Out", "Last In First Out", "Shortest Job First", "Longest Job First", "Round Robin");
+        cbxOrden.getItems().addAll("First In First Out", "Last In First Out", "Shortest Job First", "Longest Job First", "Round Robin + FIFO", "Round Robin + LIFO");
         cbxOrden.setValue("First In First Out");
         cbxOrden.getStyleClass().addAll("cbxOrden");
 
@@ -346,8 +346,11 @@ public class Planificador extends Stage {
                 case "Longest Job First":
                     startLJF();
                     break;
-                case "Round Robin":
-                    startRoundRobin();
+                case "Round Robin + FIFO":
+                    startRoundRobinFIFO();
+                    break;
+                case "Round Robin + LIFO":
+                    startRoundRobinLIFO();
                     break;
             }
         });
@@ -767,7 +770,7 @@ public class Planificador extends Stage {
         }
     }
 
-    private void startRoundRobin() {
+    private void startRoundRobinFIFO() {
         if (tbvEntrada.getItems().isEmpty()) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
             alert.setTitle("Error");
@@ -780,37 +783,35 @@ public class Planificador extends Stage {
             clearTables();
             currentTime = 0;
 
-            // Manejar quantum por defecto
             String quantumText = txtQuantum.getText();
             if (quantumText.isEmpty()) {
-                quantum = 3; // Quantum por defecto
+                quantum = 3;
             } else {
                 try {
                     quantum = Integer.parseInt(quantumText);
                 } catch (NumberFormatException e) {
-                    quantum = 3; // Quantum por defecto si la entrada no es válida
+                    quantum = 3;
                 }
             }
 
             quantumRemaining = quantum;
-            txtQuantum.setText(String.valueOf(quantumRemaining)); // Mostrar el quantum inicial en el txtQuantum
-            processesToTablesRoundRobin();
+            txtQuantum.setText(String.valueOf(quantumRemaining));
+            processesToTablesRoundRobinFIFO();
 
             timer = new Timer(true);
             timer.scheduleAtFixedRate(new TimerTask() {
                 @Override
                 public void run() {
-                    Platform.runLater(() -> updateTablesRoundRobin());
+                    Platform.runLater(() -> updateTablesRoundRobinFIFO());
                 }
             }, 0, 1000);
         }
     }
 
-    private void updateTablesRoundRobin() {
+    private void updateTablesRoundRobinFIFO() {
         currentTime++;
         txtTiempo.setText(String.valueOf(currentTime));
 
-        // Agregar procesos que llegan en el tiempo actual a la memoria
         for (Proceso proceso : procesosList) {
             if (proceso.getLlegada() == currentTime && !procesosTablaList.contains(proceso) && !proceso.getUbicacion().equals("Salida")) {
                 proceso.setUbicacion("Memoria");
@@ -851,7 +852,7 @@ public class Planificador extends Stage {
                 nextProcess.setEstado("X");
                 txtCPU.setText(nextProcess.getProceso());
             } else {
-                txtCPU.setText(""); // Limpiar el CPU si no hay procesos
+                txtCPU.setText("");
             }
 
             tbvMemoria.refresh();
@@ -867,12 +868,135 @@ public class Planificador extends Stage {
             alert.setContentText("Todos los procesos han terminado");
             alert.showAndWait();
             btnLimpiar.setDisable(false);
-            exportFile(procesosSalidaList, "RR");
+            exportFile(procesosSalidaList, "RR_FIFO");
         }
     }
 
-    private void processesToTablesRoundRobin() {
+    private void processesToTablesRoundRobinFIFO() {
         procesosList.sort(Comparator.comparingInt(Proceso::getLlegada));
+
+        for (Proceso proceso : procesosList) {
+            if (proceso.getLlegada() <= currentTime) {
+                proceso.setUbicacion("CPU");
+                proceso.setEstado("X");
+                procesosTablaList.add(proceso);
+            } else {
+                proceso.setUbicacion("Memoria");
+                proceso.setEstado("W");
+            }
+        }
+        txtCPU.setText(procesosTablaList.isEmpty() ? "" : procesosTablaList.get(0).getProceso());
+    }
+
+    private void startRoundRobinLIFO() {
+        if (tbvEntrada.getItems().isEmpty()) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setTitle("Error");
+            alert.setHeaderText("Error");
+            alert.setContentText("Debe ingresar al menos un proceso");
+            alert.showAndWait();
+        } else {
+            btnIniciar.setDisable(true);
+            btnLimpiar.setDisable(true);
+            clearTables();
+            currentTime = 0;
+
+            String quantumText = txtQuantum.getText();
+            if (quantumText.isEmpty()) {
+                quantum = 3;
+            } else {
+                try {
+                    quantum = Integer.parseInt(quantumText);
+                } catch (NumberFormatException e) {
+                    quantum = 3;
+                }
+            }
+
+            quantumRemaining = quantum;
+            txtQuantum.setText(String.valueOf(quantumRemaining));
+            processesToTablesRoundRobinLIFO();
+
+            timer = new Timer(true);
+            timer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    Platform.runLater(() -> updateTablesRoundRobinLIFO());
+                }
+            }, 0, 1000);
+        }
+    }
+
+    private void updateTablesRoundRobinLIFO() {
+        currentTime++;
+        txtTiempo.setText(String.valueOf(currentTime));
+
+        Proceso currentProcess = null;
+        for (Proceso proceso : procesosTablaList) {
+            if (proceso.getUbicacion().equals("CPU")) {
+                proceso.disminuirDuracion();
+                quantumRemaining--;
+                txtQuantum.setText(String.valueOf(quantumRemaining)); // Actualizar el quantum restante en el txtQuantum
+                currentProcess = proceso;
+                break;
+            }
+        }
+
+        for (Proceso proceso : procesosList) {
+            if (proceso.getLlegada() == currentTime && !procesosTablaList.contains(proceso) && !proceso.getUbicacion().equals("Salida")) {
+                proceso.setUbicacion("Memoria");
+                proceso.setEstado("W");
+                procesosTablaList.add(proceso);
+            }
+        }
+
+        if (currentProcess != null && currentProcess.getDuracion() <= 0) {
+            currentProcess.setUbicacion("Salida");
+            currentProcess.setEstado("F");
+            procesosSalidaList.add(currentProcess);
+            procesosTablaList.remove(currentProcess);
+            quantumRemaining = quantum; // Reiniciar el quantum para el siguiente proceso
+        } else if (quantumRemaining <= 0) {
+            currentProcess.setUbicacion("Memoria");
+            currentProcess.setEstado("B"); // Marcar el proceso como bloqueado
+            procesosTablaList.remove(currentProcess);
+            procesosTablaList.add(currentProcess); // Mover el proceso al final de la lista de memoria
+            quantumRemaining = quantum; // Reiniciar el quantum para el siguiente proceso
+        }
+
+        for (Proceso proceso : procesosList) {
+            if (proceso.getLlegada() == currentTime && !proceso.getUbicacion().equals("CPU") && proceso.getUbicacion().equals("Salida")) {
+                proceso.setUbicacion("Memoria");
+                proceso.setEstado("W");
+                procesosTablaList.add(proceso);
+            }
+        }
+
+        if (!procesosTablaList.isEmpty() && (currentProcess == null || currentProcess.getDuracion() <= 0)) {
+            procesosTablaList.sort(Comparator.comparingInt(Proceso::getLlegada).reversed());
+            Proceso nextProcess = procesosTablaList.get(0);
+            nextProcess.setUbicacion("CPU");
+            nextProcess.setEstado("X");
+            txtCPU.setText(nextProcess.getProceso());
+        }
+
+        tbvMemoria.refresh();
+        tbvProcesos.refresh();
+        tbvSalida.refresh();
+
+        if (procesosList.size() == procesosSalidaList.size()) {
+            detenerTimer();
+            Alert alert = new Alert(Alert.AlertType.INFORMATION);
+            alert.setTitle("Proceso terminado");
+            alert.setHeaderText(null);
+            alert.setContentText("Todos los procesos han terminado");
+            alert.showAndWait();
+            btnLimpiar.setDisable(false);
+            exportFile(procesosSalidaList, "RR_LIFO");
+        }
+    }
+
+    private void processesToTablesRoundRobinLIFO() {
+        procesosList.sort(Comparator.comparingInt(Proceso::getLlegada).reversed());
 
         for (Proceso proceso : procesosList) {
             if (proceso.getLlegada() <= currentTime) {
