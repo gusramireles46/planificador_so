@@ -14,6 +14,7 @@ public class Proceso {
         this.duracion = duracion;
         this.ubicacion = "Memoria";
         this.estado = "W";
+        this.size = 0;
     }
 
     public Proceso(String proceso, int llegada, int duracion, int size) {

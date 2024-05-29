@@ -195,9 +195,9 @@ public class Planificador extends Stage {
                 if (parts.length == 4) {
                     int size = Integer.parseInt(parts[3]);
                     procesosList.add(new Proceso(proceso, llegada, duracion, size));
-                    return;
+                } else {
+                    procesosList.add(new Proceso(proceso, llegada, duracion));
                 }
-                procesosList.add(new Proceso(proceso, llegada, duracion));
             }
         } catch (Exception e) {
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -220,7 +220,10 @@ public class Planificador extends Stage {
         TableColumn<Proceso, Integer> tbcDuracion = new TableColumn<>("Duracion");
         tbcDuracion.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getDuracion()).asObject());
 
-        tbvEntrada.getColumns().addAll(tbcProceso, tbcLlegada, tbcDuracion);
+        TableColumn<Proceso, Integer> tbcSize = new TableColumn<>("Tamaño");
+        tbcSize.setCellValueFactory(cellData -> new SimpleIntegerProperty(cellData.getValue().getSize()).asObject());
+
+        tbvEntrada.getColumns().addAll(tbcProceso, tbcLlegada, tbcDuracion, tbcSize);
         tbvEntrada.setItems(procesosList);
     }
 
@@ -614,11 +617,10 @@ public class Planificador extends Stage {
             }
         }
 
-        // Aquí se realiza la comparación y ordenación
         if (!procesosTablaList.isEmpty() && (currentProcess == null || currentProcess.getDuracion() <= 0)) {
             procesosTablaList.sort((p1, p2) -> {
-                if (p1.getDuracion() != p2.getDuracion()) {
-                    return Integer.compare(p1.getDuracion(), p2.getDuracion());
+                if (p1.getSize() != p2.getSize()) {
+                    return Integer.compare(p1.getSize(), p2.getSize());
                 } else {
                     return Integer.compare(p1.getLlegada(), p2.getLlegada());
                 }
@@ -647,7 +649,7 @@ public class Planificador extends Stage {
     }
 
     private void processesToTablesSjf() {
-        procesosList.sort(Comparator.comparingInt(Proceso::getLlegada));
+        procesosList.sort(Comparator.comparingInt(Proceso::getLlegada).reversed());
 
         for (Proceso proceso : procesosList) {
             if (proceso.getLlegada() <= currentTime) {
@@ -733,8 +735,16 @@ public class Planificador extends Stage {
             }
         }
 
+        // Aquí se realiza la comparación y ordenación
         if (!procesosTablaList.isEmpty() && (currentProcess == null || currentProcess.getDuracion() <= 0)) {
-            procesosTablaList.sort(Comparator.comparingInt(Proceso::getDuracion).reversed());
+            procesosTablaList.sort((p1, p2) -> {
+                if (p1.getSize() != p2.getSize()) {
+                    return Integer.compare(p2.getSize(), p1.getSize());
+                } else {
+                    return Integer.compare(p1.getLlegada(), p2.getLlegada());
+                }
+            });
+
             Proceso nextProcess = procesosTablaList.get(0);
             nextProcess.setUbicacion("CPU");
             nextProcess.setEstado("X");
@@ -894,13 +904,12 @@ public class Planificador extends Stage {
             carpeta.mkdirs();
         }
 
-        // Crear el archivo en la ruta especificada
         File archivo = new File(directorioEscritorio + nombreArchivo);
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(archivo))) {
             // Escribir el contenido del archivo
             for (Proceso proceso : procesos) {
                 writer.write(proceso.toString());
-                writer.newLine(); // Nueva línea para separar los procesos
+                writer.newLine();
             }
             writer.write("\nTiempo total: " + currentTime);
             System.out.println("Archivo exportado correctamente: " + archivo.getAbsolutePath());
@@ -923,8 +932,6 @@ public class Planificador extends Stage {
     private void openDirectoryAndFile(File file) {
         String folderPath = file.getParent();
         String filePath = file.getAbsolutePath();
-
-        // Ejecutar el comando para abrir la carpeta con el archivo seleccionado
         String[] commands = {"explorer.exe", "/select,", filePath};
         try {
             Runtime.getRuntime().exec(commands, null, new File(folderPath));
