@@ -51,11 +51,19 @@ public class Planificador extends Stage {
     private int quantum; // Quantum de tiempo
     private int quantumRemaining; // Tiempo restante del quantum
 
+    // FAT
+    private FAT fat;
+
     // Componentes de la Interfaz de Usuario Específicos
     private VBox vTabla, vMemoria, vCPU, vQuantum, vTiempo;
     private Label lblMemoria;
 
     public Planificador() {
+        if (fat != null) {
+            this.fat = fat;
+        } else {
+            this.fat = new FAT();
+        }
         CrearGUI();
         escena = new Scene(bdpPrincipal, 1280, 720);
         escena.getStylesheets().addAll(BootstrapFX.bootstrapFXStylesheet(), getClass().getResource("css/style.css").toExternalForm());
@@ -149,6 +157,7 @@ public class Planificador extends Stage {
                 e.consume();
             }
         });
+
         mitCarpeta = new MenuItem("Ir a la carpeta de salidas");
         mitCarpeta.setOnAction(e -> {
             try {
@@ -157,7 +166,6 @@ public class Planificador extends Stage {
                 e1.printStackTrace();
             }
         });
-
 
         mnArchivo = new Menu("Archivo");
         mnArchivo.getItems().addAll(mitArchivo, mitCarpeta);
@@ -399,6 +407,8 @@ public class Planificador extends Stage {
         txtTiempo.clear();
         btnIniciar.setDisable(false);
         btnLimpiar.setDisable(false);
+        fat = null;
+        this.fat = new FAT();
     }
 
     private void clearTables() {
@@ -414,6 +424,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("CPU");
                 proceso.setEstado("X");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso);
             } else {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
@@ -448,6 +459,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             }
         }
 
@@ -472,6 +484,7 @@ public class Planificador extends Stage {
             alert.showAndWait();
             btnLimpiar.setDisable(false);
             exportFile(procesosSalidaList, "FIFO");
+            fat.exportarSalida(procesosSalidaList, "FIFO");
         }
     }
 
@@ -507,6 +520,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("CPU");
                 proceso.setEstado("X");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             } else {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
@@ -541,6 +555,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             }
         }
 
@@ -617,6 +632,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             }
         }
 
@@ -659,6 +675,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("CPU");
                 proceso.setEstado("X");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             } else {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
@@ -701,6 +718,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("CPU");
                 proceso.setEstado("X");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             } else {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
@@ -735,6 +753,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             }
         }
 
@@ -817,6 +836,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             }
         }
 
@@ -880,6 +900,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("CPU");
                 proceso.setEstado("X");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             } else {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
@@ -946,6 +967,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             }
         }
 
@@ -1003,6 +1025,7 @@ public class Planificador extends Stage {
                 proceso.setUbicacion("CPU");
                 proceso.setEstado("X");
                 procesosTablaList.add(proceso);
+                fat.agregarProceso(proceso); // Asegúrate de que el proceso se agregue a FAT al llegar
             } else {
                 proceso.setUbicacion("Memoria");
                 proceso.setEstado("W");
@@ -1036,6 +1059,8 @@ public class Planificador extends Stage {
                 writer.newLine();
             }
             writer.write("\nTiempo total: " + currentTime);
+            writer.newLine();
+            writer.write(fat.toString());
             System.out.println("Archivo exportado correctamente: " + archivo.getAbsolutePath());
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
             alert.setTitle("Archivo exportado");
